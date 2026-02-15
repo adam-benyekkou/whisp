@@ -55,5 +55,48 @@ Copy `.env.example` to `.env` and configure:
 - `DEBUG`: Enable/disable debug mode
 - `MAX_FILE_SIZE`: Maximum file upload size in bytes
 
+## Testing
+
+### E2E Tests with Playwright
+
+The project includes comprehensive end-to-end tests that verify:
+- Creating and retrieving text whisps
+- Password-protected whisps
+- One-time access (deletion after first view)
+- Expiration handling
+- UI functionality
+
+#### Setup
+```bash
+npm install
+npx playwright install chromium
+```
+
+#### Run Tests
+```bash
+# Make sure the app is running first
+docker-compose up -d
+
+# Run tests
+npm test
+
+# Run with UI
+npm run test:ui
+
+# Run in headed mode (see browser)
+npm run test:headed
+
+# Debug mode
+npm run test:debug
+```
+
+#### Test Coverage
+- ✅ Create text whisp and decrypt
+- ✅ Password protection
+- ✅ One-time access deletion
+- ✅ TTL options
+- ✅ UI rendering
+- ✅ Clipboard functionality
+
 ## License
 MIT

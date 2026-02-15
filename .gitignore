@@ -29,6 +29,12 @@ whisp.db-journal
 app/storage/files/*
 !app/storage/files/.gitkeep
 
+# Node.js / Playwright
+node_modules/
+package-lock.json
+playwright-report/
+test-results/
+
 # OS metadata
 .DS_Store
 Thumbs.db
