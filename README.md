@@ -2,8 +2,6 @@
 
 Whisp is a lightweight, self-hosted secret sharing application. It allows you to share encrypted strings or files with a temporary, unique link that expires after a set duration or after being accessed once.
 
-![Whisp App Screenshot](whisp-access-test.png)
-
 ## Features
 - **Zero-Knowledge Encryption**: Secrets are encrypted in the browser using the Web Crypto API (AES-GCM 256-bit). The server never sees the plaintext or the decryption key.
 - **RAM-Only File Storage**: Files are stored in a temporary `tmpfs` volume in RAM, never touching the physical disk.
