@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # force image name to be 'whisp' regardless of repo name
-  IMAGE_NAME: ${{ github.repository_owner }}/whisp
+  # force image name to be 'whisp-secret' regardless of repo name
+  IMAGE_NAME: ${{ github.repository_owner }}/whisp-secret
 
 jobs:
   security-audit:
