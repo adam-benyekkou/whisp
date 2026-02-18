@@ -37,20 +37,6 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Application Secret Key
-SECRET_KEY = os.getenv("SECRET_KEY", "whisp-insecure-default-key-change-me")
-if SECRET_KEY == "whisp-insecure-default-key-change-me" and not os.getenv("DEBUG"):
-    print("WARNING: Using default SECRET_KEY in production! Please set SECRET_KEY env var.")
-
-# CORS configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure this for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Resolve directories relative to this file
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
