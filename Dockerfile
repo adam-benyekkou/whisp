@@ -26,8 +26,8 @@ COPY . .
 
 # Create non-root user and setup directories
 RUN useradd -m -u 1000 whisp && \
-    mkdir -p app/storage/files data && \
-    chown -R whisp:whisp /app /opt/app-libs
+    mkdir -p /app/data/storage && \
+    chown -R whisp:whisp /app /opt/app-libs /app/data/storage
 
 # Switch to non-root user
 USER whisp

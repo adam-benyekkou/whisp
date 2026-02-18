@@ -27,7 +27,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Path configuration
 BASE_DIR = Path(__file__).resolve().parent
-STORAGE_DIR = os.getenv("STORAGE_DIR", str(BASE_DIR / "storage" / "files"))
+STORAGE_DIR = os.getenv("STORAGE_DIR", "/app/data/storage")
 MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", str(10 * 1024 * 1024)))
 os.makedirs(STORAGE_DIR, exist_ok=True)
 
@@ -47,9 +47,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Resolve directories relative to this file
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
+
 # Mount static files and templates with absolute paths
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 async def cleanup_expired_whisps(db: AsyncSession):
     """
