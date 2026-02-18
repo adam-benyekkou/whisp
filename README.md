@@ -26,32 +26,49 @@ Whisp is a lightweight, self-hosted secret sharing application built with the **
 
 ### Docker (Recommended)
 ```bash
+mkdir -p data && chown -R 1000:1000 data
 docker-compose up -d
 ```
 
-### Production Deployment (Pre-built Image)
-To use the pre-built image from GitHub Container Registry:
+### Production Deployment (Traefik + Docker Compose)
+To use the pre-built image from GitHub Container Registry with a reverse proxy like Traefik:
 
 ```yaml
 # docker-compose.yml
 services:
   whisp:
     image: ghcr.io/adam-benyekkou/whisp-secret:latest
-    ports:
-      - "8000:8000"
-    tmpfs:
-      - /app/app/storage/files:size=100M,mode=1777
-    volumes:
-      - whisp_data:/app/data
+    container_name: whisp
+    restart: unless-stopped
+    networks:
+      - proxy-network
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////app/data/whisp.db
-    restart: unless-stopped
+      - STORAGE_DIR=/app/data/storage
+      - DEBUG=false
+    volumes:
+      - ./data:/app/data
+    tmpfs:
+      # Secure ephemeral storage in RAM for encrypted file fragments
+      - /app/data/storage:size=100M,mode=1777
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy-network"
+      - "traefik.http.routers.whisp.rule=Host(`whisp.yourdomain.com`)"
+      - "traefik.http.routers.whisp.entrypoints=websecure"
+      - "traefik.http.routers.whisp.tls.certresolver=myresolver"
+      - "traefik.http.services.whisp.loadbalancer.server.port=8000"
 
-volumes:
-  whisp_data:
+networks:
+  proxy-network:
+    external: true
 ```
 
-Access the app at **http://localhost:8000**
+#### Setup Persistence
+```bash
+mkdir -p data && chown -R 1000:1000 data
+docker compose up -d
+```
 
 ### Manual Setup
 1. Install dependencies:
