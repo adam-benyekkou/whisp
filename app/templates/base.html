@@ -65,6 +65,13 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 selection:bg-mauve selection:text-base">
 
+    <!-- Insecure Context Warning -->
+    <template x-if="!window.isSecureContext">
+        <div class="fixed top-0 left-0 w-full bg-red text-base font-bold py-2 text-center z-[100] flex items-center justify-center gap-2 text-crust">
+            ⚠️ Security Risk: Encryption is disabled on non-HTTPS connections. Please use HTTPS.
+        </div>
+    </template>
+
     <!-- Toast Notification -->
     <div x-data="{ show: false, message: '', type: 'info' }"
          @notify.window="show = true; message = $event.detail.message; type = $event.detail.type || 'info'; setTimeout(() => show = false, 3000)"
