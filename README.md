@@ -1,4 +1,4 @@
-# 🔒 Whisp - Ephemeral Secret Sharing
+# <img src="app/static/whisp-logo.svg" width="48" height="48" style="vertical-align: middle;"> Whisp - Ephemeral Secret Sharing
 
 <div align="center">
 
