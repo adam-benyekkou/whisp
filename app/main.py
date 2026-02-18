@@ -51,6 +51,12 @@ app.add_middleware(
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 
+# Verify directories exist for production stability
+if not STATIC_DIR.exists():
+    print(f"CRITICAL ERROR: Static directory not found at {STATIC_DIR}")
+if not TEMPLATES_DIR.exists():
+    print(f"CRITICAL ERROR: Templates directory not found at {TEMPLATES_DIR}")
+
 print(f"Startup: BASE_DIR={BASE_DIR}")
 print(f"Startup: STATIC_DIR={STATIC_DIR}")
 print(f"Startup: TEMPLATES_DIR={TEMPLATES_DIR}")
