@@ -82,7 +82,12 @@ async def startup():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Docker/Kubernetes"""
-    return {"status": "ok"}
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+
+@app.get("/ping")
+async def ping():
+    """Simple ping endpoint without templates"""
+    return "pong"
 
 @app.get("/")
 async def read_index(request: Request):
