@@ -1,81 +1,120 @@
-# <img src="app/static/whisp-logo.svg" width="48" height="48" style="vertical-align: middle;"> Whisp
+# 🔒 Whisp - Ephemeral Secret Sharing
 
-Whisp is a lightweight, self-hosted secret sharing application built with the **PETAL Stack** (Python, Alpine.js, Tailwind CSS, Linux). It allows you to share encrypted strings or files with a temporary, unique link that expires after a set duration or after being accessed once.
+<div align="center">
 
-### [Live Demo](https://whisp.cavydev.com/)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Alpine.js](https://img.shields.io/badge/Alpine.js-8BC0D0?style=for-the-badge&logo=alpinedotjs&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-45ba4b?style=for-the-badge&logo=playwright&logoColor=white)
 
-## Security Architecture
-Whisp is designed with a "security-first" mindset, ensuring that your data remains private and ephemeral.
+**A self-hosted, zero-knowledge secret sharing platform built with the PETAL Stack.**
+Secrets are encrypted in the browser, stored in RAM, and destroyed upon access.
 
-- **Zero-Knowledge Encryption**: Secrets are encrypted in the browser using the Web Crypto API (AES-GCM 256-bit). The server never receives the plaintext or the decryption key.
-- **Encryption at Rest**: Files are encrypted on the server with a unique, transient key before storage.
-- **RAM-Only File Storage**: Uploaded artifacts are stored in a temporary `tmpfs` volume in RAM, ensuring they never touch the physical disk.
-- **One-Time Access (Burn-on-Read)**: Whisps are automatically incinerated from both the database and storage immediately after the first access.
-- **Rate Limiting & Hashing**: Protection against brute-force attacks via `slowapi` and secure password hashing using `bcrypt` (with SHA-256 pre-hashing).
-- **Secure Infrastructure**: Multi-stage Docker builds, non-root execution, and sanitized async file operations.
+[Live Demo](https://whisp.cavydev.com) • [Report Bug](https://github.com/adam-benyekkou/whisp/issues)
 
-## Tech Stack
-- **Backend**: Python 3.11 (FastAPI + SQLAlchemy)
-- **Database**: SQLite (async with aiosqlite)
-- **Frontend**: PETAL Stack (Alpine.js + Tailwind CSS)
-- **Interactions**: Web Crypto API (Client-side AES-GCM)
+</div>
 
-## Deployment
+---
 
-The recommended way to deploy Whisp is using **Docker Compose**.
+## 🛡️ Security Architecture
 
-1.  **Prepare the Environment**:
-    ```bash
-    mkdir -p data && chown -R 1000:1000 data
-    ```
+Whisp is designed with a **Zero-Trust** and **Privacy-First** philosophy.
 
-2.  **Create your `docker-compose.yml`**:
-    ```yaml
-    services:
-      whisp:
-        image: ghcr.io/adam-benyekkou/whisp-secret:latest
-        container_name: whisp
-        restart: unless-stopped
-        ports:
-          - "8000:8000"
-        environment:
-          - DATABASE_URL=sqlite+aiosqlite:////app/data/whisp.db
-          - STORAGE_DIR=/app/data/storage
-          - DEBUG=false
-        volumes:
-          - ./data:/app/data
-        tmpfs:
-          - /app/data/storage:size=100M,mode=1777
-    ```
+*   **Zero-Knowledge Encryption**: Secrets are encrypted **client-side** using the Web Crypto API (AES-GCM 256-bit). The server **never** receives the plaintext or the decryption key (which is passed via the URL fragment `#`).
+*   **RAM-Only Storage (tmpfs)**: Encrypted payloads are stored in a Docker `tmpfs` volume. Data is never written to the physical disk, preventing forensic recovery.
+*   **Ephemeral Lifecycle**: Data is automatically nuked from memory after **one access** or when the **TTL (Time-To-Live)** expires.
+*   **Double-Blind Key**: For files, the server generates a unique transit key that is never stored in the database, ensuring that even a database dump yields useless metadata.
 
-3.  **Launch**:
-    ```bash
-    docker compose up -d
-    ```
+### 🧠 The Data Flow
 
-## Configuration
-Copy `.env.example` to `.env` to customize your installation:
-- `DATABASE_URL`: Database connection string.
-- `DEBUG`: Set to `false` for production.
-- `MAX_FILE_SIZE`: Maximum file upload size in bytes (Default: 10MB).
+```mermaid
+sequenceDiagram
+    participant User
+    participant Browser
+    participant Server (RAM)
+    participant Database
 
-## Testing
+    User->>Browser: Enters Secret
+    Browser->>Browser: Encrypt (AES-GCM)
+    Browser->>Server (RAM): Send Encrypted Blob
+    Server (RAM)->>Database: Store Metadata (ID, TTL)
+    Server (RAM)->>User: Return Unique URL (w/ Key fragment)
+    Note over Server (RAM): Secret exists ONLY in volatile memory
+```
 
-Whisp includes a comprehensive Playwright E2E suite and Pytest backend units.
+---
+
+## 🚀 Deployment
+
+Whisp is distributed as a lightweight Docker container.
+
+### Option 1: Docker Compose (Recommended)
+
+```yaml
+services:
+  whisp:
+    image: ghcr.io/adam-benyekkou/whisp-secret:latest
+    container_name: whisp
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/whisp.db
+      - MAX_FILE_SIZE=10485760 # 10MB
+    volumes:
+      - ./data:/app/data
+    tmpfs:
+      # 🔒 CRITICAL: Stores secrets in RAM only
+      - /app/data/storage:size=100M,mode=1777
+```
+
+**Run the stack:**
 
 ```bash
-# Run backend unit tests inside the container
-docker exec whisp python -m pytest tests/test_backend.py
+mkdir -p data && sudo chown -R 1000:1000 data
+docker compose up -d
+```
 
-# Run E2E tests (requires local node/playwright setup)
-npm install && npx playwright install chromium
+### Option 2: Environment Configuration
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | Async connection string | `sqlite+aiosqlite:///...` |
+| `STORAGE_DIR` | Path for ephemeral storage | `/app/data/storage` |
+| `MAX_FILE_SIZE` | Max upload size (bytes) | `10485760` (10MB) |
+| `DEBUG` | Toggle debug mode | `false` |
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+This project maintains rigorous code quality standards using Playwright for End-to-End (E2E) testing.
+
+**Test Coverage:**
+*   ✅ **Zero-Knowledge verification**: Ensuring plaintext never leaves the browser.
+*   ✅ **Destruction verification**: Confirming 404s after single access.
+*   ✅ **TTL Expiration**: Verifying background cleanup tasks.
+
+```bash
+# Run the full test suite
+npm install
+npx playwright install chromium
 npx playwright test
 ```
 
 ---
 
-For local development and manual setup instructions, please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+## 🛠️ Tech Stack
 
-## License
-MIT
+*   **Frontend**: PETAL (Python, Alpine.js, Tailwind CSS)
+*   **Backend**: FastAPI (Async Python 3.11)
+*   **Database**: SQLite (Async via aiosqlite)
+*   **Infrastructure**: Docker, Docker Compose, GitHub Actions
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
 
