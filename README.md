@@ -4,133 +4,78 @@ Whisp is a lightweight, self-hosted secret sharing application built with the **
 
 ### [Live Demo](https://whisp.cavydev.com/)
 
-## Features
-- **Zero-Knowledge Encryption**: Secrets are encrypted in the browser using the Web Crypto API (AES-GCM 256-bit). The server never sees the plaintext or the decryption key.
-- **RAM-Only File Storage**: Files are stored in a temporary `tmpfs` volume in RAM, never touching the physical disk.
-- **Encryption at Rest**: Files are encrypted on the server with a unique, transient key before being stored in memory.
-- **One-Time Access**: Whisps are automatically deleted after the first access.
-- **Expiration (TTL)**: Set a duration for how long the secret should be available (1 minute to 1 week).
-- **Password Protection**: Add an extra layer of security with a custom password.
-- **File Support**: Share files up to 10MB securely.
-- **Lightweight**: Built with FastAPI and SQLite for minimal resource usage.
-- **Secure**: Multi-stage Docker build, non-root user, async file operations, and sanitized inputs.
+## Security Architecture
+Whisp is designed with a "security-first" mindset, ensuring that your data remains private and ephemeral.
+
+- **Zero-Knowledge Encryption**: Secrets are encrypted in the browser using the Web Crypto API (AES-GCM 256-bit). The server never receives the plaintext or the decryption key.
+- **Encryption at Rest**: Files are encrypted on the server with a unique, transient key before storage.
+- **RAM-Only File Storage**: Uploaded artifacts are stored in a temporary `tmpfs` volume in RAM, ensuring they never touch the physical disk.
+- **One-Time Access (Burn-on-Read)**: Whisps are automatically incinerated from both the database and storage immediately after the first access.
+- **Rate Limiting & Hashing**: Protection against brute-force attacks via `slowapi` and secure password hashing using `bcrypt` (with SHA-256 pre-hashing).
+- **Secure Infrastructure**: Multi-stage Docker builds, non-root execution, and sanitized async file operations.
 
 ## Tech Stack
 - **Backend**: Python 3.11 (FastAPI + SQLAlchemy)
 - **Database**: SQLite (async with aiosqlite)
-- **Encryption**: 
-  - Client-side: Web Crypto API (AES-GCM)
-  - Server-side: Cryptography (Fernet/AES)
-- **Frontend**: PETAL Stack (Python + Alpine.js + Tailwind CSS + Linux)
-- **Infrastructure**: Docker / Docker Compose
+- **Frontend**: PETAL Stack (Alpine.js + Tailwind CSS)
+- **Interactions**: Web Crypto API (Client-side AES-GCM)
 
-## Quick Start
+## Deployment
 
-### Docker (Recommended)
-```bash
-mkdir -p data && chown -R 1000:1000 data
-docker-compose up -d
-```
+The recommended way to deploy Whisp is using **Docker Compose**.
 
-### Production Deployment (Pre-built Image)
-To use the pre-built image from GitHub Container Registry:
+1.  **Prepare the Environment**:
+    ```bash
+    mkdir -p data && chown -R 1000:1000 data
+    ```
 
-```yaml
-# docker-compose.yml
-services:
-  whisp:
-    image: ghcr.io/adam-benyekkou/whisp-secret:latest
-    container_name: whisp
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=sqlite+aiosqlite:////app/data/whisp.db
-      - STORAGE_DIR=/app/data/storage
-      - DEBUG=false
-    volumes:
-      - ./data:/app/data
-    tmpfs:
-      # Secure ephemeral storage in RAM for encrypted file fragments
-      - /app/data/storage:size=100M,mode=1777
-```
+2.  **Create your `docker-compose.yml`**:
+    ```yaml
+    services:
+      whisp:
+        image: ghcr.io/adam-benyekkou/whisp-secret:latest
+        container_name: whisp
+        restart: unless-stopped
+        ports:
+          - "8000:8000"
+        environment:
+          - DATABASE_URL=sqlite+aiosqlite:////app/data/whisp.db
+          - STORAGE_DIR=/app/data/storage
+          - DEBUG=false
+        volumes:
+          - ./data:/app/data
+        tmpfs:
+          - /app/data/storage:size=100M,mode=1777
+    ```
 
-#### Setup & Launch
-```bash
-mkdir -p data && chown -R 1000:1000 data
-docker compose up -d
-```
-
-### Manual Setup
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. Run the server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-## Security Features
-- **Client-side encryption** (AES-GCM with random IVs) for text secrets.
-- **Server-side encryption** for files using unique per-file keys.
-- **RAM-only storage** (`tmpfs`) ensures files are never written to the persistent disk.
-- **Rate Limiting** to prevent brute-force and DoS attacks.
-- **Streaming Uploads** to handle files efficiently without memory exhaustion.
-- Server receives only encrypted payloads or encrypts streams immediately.
-- Decryption key transmitted via URL fragment (never sent to server).
-- One-time access with automatic deletion (database record removed immediately on access).
-- File size validation (10MB limit).
-- Path traversal protection.
-- Non-root Docker container.
-- CORS configuration.
-- Password hashing with bcrypt (SHA-256 pre-hashing).
+3.  **Launch**:
+    ```bash
+    docker compose up -d
+    ```
 
 ## Configuration
-Copy `.env.example` to `.env` and configure:
-- `DATABASE_URL`: Database connection string
-- `DEBUG`: Enable/disable debug mode
-- `MAX_FILE_SIZE`: Maximum file upload size in bytes
+Copy `.env.example` to `.env` to customize your installation:
+- `DATABASE_URL`: Database connection string.
+- `DEBUG`: Set to `false` for production.
+- `MAX_FILE_SIZE`: Maximum file upload size in bytes (Default: 10MB).
 
 ## Testing
 
-### E2E Tests with Playwright
+Whisp includes a comprehensive Playwright E2E suite and Pytest backend units.
 
-The project includes comprehensive end-to-end tests that verify:
-- Creating and retrieving text whisps
-- Password-protected whisps
-- One-time access (deletion after first view)
-- Expiration handling
-- UI functionality
-
-#### Setup
 ```bash
-npm install
-npx playwright install chromium
-```
-
-#### Run Tests
-```bash
-# Make sure the app is running first
-docker-compose up -d --build
-
 # Run backend unit tests inside the container
-docker exec whisp-whisp-1 python -m pytest tests/test_backend.py
+docker exec whisp python -m pytest tests/test_backend.py
 
 # Run E2E tests (requires local node/playwright setup)
-npm install
-npx playwright install chromium
+npm install && npx playwright install chromium
 npx playwright test
 ```
 
-#### Test Coverage
-- ✅ Create text whisp and decrypt
-- ✅ Password protection
-- ✅ One-time access deletion
-- ✅ TTL options
-- ✅ UI rendering
-- ✅ Clipboard functionality
+---
+
+For local development and manual setup instructions, please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 MIT
+
