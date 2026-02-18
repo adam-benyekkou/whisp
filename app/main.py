@@ -88,7 +88,28 @@ async def startup():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Docker/Kubernetes"""
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "status": "ok", 
+        "timestamp": datetime.utcnow().isoformat(),
+        "env": {
+            "STORAGE_DIR": STORAGE_DIR,
+            "BASE_DIR": str(BASE_DIR),
+            "ROOT_PATH": app.root_path
+        }
+    }
+
+@app.api_route("/debug-path/{full_path:path}")
+async def debug_request(request: Request, full_path: str):
+    """Catch-all debug endpoint to see what Traefik is sending"""
+    return {
+        "path": full_path,
+        "method": request.method,
+        "headers": dict(request.headers),
+        "url": str(request.url),
+        "base_url": str(request.base_url),
+        "scope_path": request.scope.get("path"),
+        "root_path": request.scope.get("root_path")
+    }
 
 @app.get("/ping")
 async def ping():
